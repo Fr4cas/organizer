@@ -22,10 +22,40 @@ OUTPUT_DIR = PROJECT_ROOT / "output"
 
 
 # --------------------------------------------------
+# Shared styling
+# --------------------------------------------------
+
+def style_header_row(ws):
+
+    header_fill = PatternFill(
+        "solid",
+        fgColor="4472C4"
+    )
+
+    for cell in ws[1]:
+
+        cell.font = Font(
+            name="Microsoft JhengHei",
+            bold=True,
+            color="FFFFFF",
+            size=11
+        )
+
+        cell.fill = header_fill
+
+        cell.alignment = Alignment(
+            horizontal="center",
+            vertical="center"
+        )
+
+    ws.row_dimensions[1].height = 30
+
+
+# --------------------------------------------------
 # 1. Export individual organized workbook
 # --------------------------------------------------
 
-def export_organized(file_path, data):
+def export_organized(file_path, data, anomalies):
 
     if data is None or data.empty:
         print("No records to export.")
@@ -54,28 +84,7 @@ def export_organized(file_path, data):
         # Column headers
         # ----------------------------------
 
-        header_fill = PatternFill(
-            "solid",
-            fgColor="4472C4"
-        )
-
-        for cell in ws[1]:
-
-            cell.font = Font(
-                name="Microsoft JhengHei",
-                bold=True,
-                color="FFFFFF",
-                size=11
-            )
-
-            cell.fill = header_fill
-
-            cell.alignment = Alignment(
-                horizontal="center",
-                vertical="center"
-            )
-
-        ws.row_dimensions[1].height = 30
+        style_header_row(ws)
 
         # ----------------------------------
         # Excel table
@@ -175,8 +184,30 @@ def export_organized(file_path, data):
         ws.page_setup.fitToHeight = 0
         ws.page_setup.orientation = "landscape"
 
+        # ----------------------------------
+        # Anomalies sheet
+        # ----------------------------------
+
+        anomalies.to_excel(
+            writer,
+            sheet_name="Anomalies",
+            index=False
+        )
+
+        anomaly_ws = writer.sheets["Anomalies"]
+
+        style_header_row(anomaly_ws)
+
+        anomaly_ws.column_dimensions["A"].width = 12
+        anomaly_ws.column_dimensions["B"].width = 12
+        anomaly_ws.column_dimensions["C"].width = 25
+        anomaly_ws.column_dimensions["D"].width = 20
+
+        anomaly_ws.freeze_panes = "A2"
+
     print(f"Exported: {output_file.name}")
     print(f"Records: {len(data)}")
+    print(f"Anomalies: {len(anomalies)}")
 
 
 # --------------------------------------------------
@@ -195,7 +226,7 @@ def process_results(results):
         print(f"\nExporting: {file_path.name}")
 
         try:
-            export_organized(file_path, result["data"])
+            export_organized(file_path, result["data"], result["anomalies"])
 
             successful += 1
 

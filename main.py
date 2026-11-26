@@ -1,5 +1,6 @@
 
 from scripts.reader import process_all_excels
+from scripts.validator import find_anomalies
 from scripts.combiner import process_results
 
 
@@ -13,6 +14,10 @@ def main():
 
     if not results:
         return
+
+    for result in results:
+
+        result["anomalies"] = find_anomalies(result["data"])
 
     process_results(results)
 
