@@ -24,6 +24,8 @@ SUPPORTED_EXTENSIONS = {
     ".xls"
 }
 
+SOURCE_ROW_COLUMN = "原列"
+
 
 # --------------------------------------------------
 # 1. Discover Excel workbooks
@@ -107,6 +109,9 @@ def read_excel(file_path):
         )
 
     df = df[REQUIRED_COLUMNS].copy()
+
+    # Original Excel row number (1-based) of each record
+    df[SOURCE_ROW_COLUMN] = df.index + header_row + 2
 
     # Remove completely empty records
     df = df[

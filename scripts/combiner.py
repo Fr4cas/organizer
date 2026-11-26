@@ -85,7 +85,7 @@ def export_organized(file_path, data):
 
         table = Table(
             displayName="OrganizedTable",
-            ref=f"A1:D{last_row}"
+            ref=f"A1:E{last_row}"
         )
 
         table.tableStyleInfo = TableStyleInfo(
@@ -112,6 +112,7 @@ def export_organized(file_path, data):
         ws.column_dimensions["B"].width = 25
         ws.column_dimensions["C"].width = 65
         ws.column_dimensions["D"].width = 20
+        ws.column_dimensions["E"].width = 14
 
         # ----------------------------------
         # Data formatting
@@ -154,6 +155,11 @@ def export_organized(file_path, data):
             )
 
             row[3].alignment = Alignment(
+                horizontal="center",
+                vertical="center"
+            )
+
+            row[4].alignment = Alignment(
                 horizontal="center",
                 vertical="center"
             )
