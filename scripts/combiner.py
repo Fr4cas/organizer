@@ -57,19 +57,23 @@ def style_header_row(ws):
 
 INVENTORY_COLUMNS = [
     "檔名",
+    "擷取單號",
+    "擷取主旨",
     "路徑"
 ]
 
 
-def build_inventory(scan_results):
+def build_inventory(parse_results):
 
     return pd.DataFrame(
         [
             {
                 "檔名": file["filename"],
+                "擷取單號": file["document_number"],
+                "擷取主旨": file["subject"],
                 "路徑": str(file["full_path"])
             }
-            for file in scan_results["files"]
+            for file in parse_results["files"]
         ],
         columns=INVENTORY_COLUMNS
     )
@@ -254,10 +258,12 @@ def export_organized(file_path, data, anomalies, inventory):
                         cell.data_type = "s"
 
             inventory_ws.column_dimensions["A"].width = 60
-            inventory_ws.column_dimensions["B"].width = 100
+            inventory_ws.column_dimensions["B"].width = 22
+            inventory_ws.column_dimensions["C"].width = 50
+            inventory_ws.column_dimensions["D"].width = 100
 
             inventory_ws.freeze_panes = "A2"
-            inventory_ws.auto_filter.ref = f"A1:B{inventory_ws.max_row}"
+            inventory_ws.auto_filter.ref = f"A1:D{inventory_ws.max_row}"
 
     print(f"Exported: {output_file.name}")
     print(f"Records: {len(data)}")
@@ -271,10 +277,10 @@ def export_organized(file_path, data, anomalies, inventory):
 # 2. Export all extracted results
 # --------------------------------------------------
 
-def process_results(results, scan_results=None):
+def process_results(results, parse_results=None):
 
     # No scan (no folders selected) means no inventory sheet, same as before
-    inventory = build_inventory(scan_results) if scan_results is not None else None
+    inventory = build_inventory(parse_results) if parse_results is not None else None
 
     successful = 0
     failed = 0

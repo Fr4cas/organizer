@@ -3,6 +3,7 @@ from scripts.reader import process_all_excels
 from scripts.validator import find_anomalies
 from scripts.folder_selector import select_folders
 from scripts.file_scanner import scan_files, print_scan_summary
+from scripts.filename_parser import parse_scan_results, print_parse_summary
 from scripts.combiner import process_results
 
 
@@ -23,7 +24,7 @@ def main():
 
     folder_config = select_folders()
 
-    scan_results = None
+    parse_results = None
 
     if folder_config["selected_folders"]:
 
@@ -31,11 +32,15 @@ def main():
 
         print_scan_summary(folder_config, scan_results)
 
+        parse_results = parse_scan_results(scan_results)
+
+        print_parse_summary(parse_results)
+
     else:
 
         print("\nNo main folders selected. Skipping file scan. Continuing with Excel export.")
 
-    process_results(results, scan_results)
+    process_results(results, parse_results)
 
 
 if __name__ == "__main__":
