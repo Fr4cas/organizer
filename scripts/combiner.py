@@ -52,10 +52,34 @@ def style_header_row(ws):
 
 
 # --------------------------------------------------
+# File inventory
+# --------------------------------------------------
+
+INVENTORY_COLUMNS = [
+    "檔名",
+    "路徑"
+]
+
+
+def build_inventory(scan_results):
+
+    return pd.DataFrame(
+        [
+            {
+                "檔名": file["filename"],
+                "路徑": str(file["full_path"])
+            }
+            for file in scan_results["files"]
+        ],
+        columns=INVENTORY_COLUMNS
+    )
+
+
+# --------------------------------------------------
 # 1. Export individual organized workbook
 # --------------------------------------------------
 
-def export_organized(file_path, data, anomalies):
+def export_organized(file_path, data, anomalies, inventory):
 
     if data is None or data.empty:
         print("No records to export.")
@@ -205,16 +229,52 @@ def export_organized(file_path, data, anomalies):
 
         anomaly_ws.freeze_panes = "A2"
 
+        # ----------------------------------
+        # File inventory sheet
+        # ----------------------------------
+
+        if inventory is not None:
+
+            inventory.to_excel(
+                writer,
+                sheet_name="File Inventory",
+                index=False
+            )
+
+            inventory_ws = writer.sheets["File Inventory"]
+
+            style_header_row(inventory_ws)
+
+            # Keep filenames and paths as text (e.g. "=..." must not become a formula)
+            for row in inventory_ws.iter_rows(min_row=2):
+
+                for cell in row:
+
+                    if isinstance(cell.value, str) and cell.value.startswith("="):
+                        cell.data_type = "s"
+
+            inventory_ws.column_dimensions["A"].width = 60
+            inventory_ws.column_dimensions["B"].width = 100
+
+            inventory_ws.freeze_panes = "A2"
+            inventory_ws.auto_filter.ref = f"A1:B{inventory_ws.max_row}"
+
     print(f"Exported: {output_file.name}")
     print(f"Records: {len(data)}")
     print(f"Anomalies: {len(anomalies)}")
+
+    if inventory is not None:
+        print(f"Inventory: {len(inventory)} file(s)")
 
 
 # --------------------------------------------------
 # 2. Export all extracted results
 # --------------------------------------------------
 
-def process_results(results):
+def process_results(results, scan_results=None):
+
+    # No scan (no folders selected) means no inventory sheet, same as before
+    inventory = build_inventory(scan_results) if scan_results is not None else None
 
     successful = 0
     failed = 0
@@ -226,7 +286,7 @@ def process_results(results):
         print(f"\nExporting: {file_path.name}")
 
         try:
-            export_organized(file_path, result["data"], result["anomalies"])
+            export_organized(file_path, result["data"], result["anomalies"], inventory)
 
             successful += 1
 

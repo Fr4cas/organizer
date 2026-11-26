@@ -23,6 +23,8 @@ def main():
 
     folder_config = select_folders()
 
+    scan_results = None
+
     if folder_config["selected_folders"]:
 
         scan_results = scan_files(folder_config)
@@ -33,7 +35,7 @@ def main():
 
         print("\nNo main folders selected. Skipping file scan. Continuing with Excel export.")
 
-    process_results(results)
+    process_results(results, scan_results)
 
 
 if __name__ == "__main__":
