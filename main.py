@@ -1,6 +1,7 @@
 
 from scripts.reader import process_all_excels
 from scripts.validator import find_anomalies
+from scripts.classifier import classify_records
 from scripts.folder_selector import select_folders
 from scripts.file_scanner import scan_files, print_scan_summary
 from scripts.filename_parser import parse_scan_results, print_parse_summary
@@ -21,6 +22,8 @@ def main():
     for result in results:
 
         result["anomalies"] = find_anomalies(result["data"])
+
+        result["company_records"], result["site_records"] = classify_records(result["data"])
 
     folder_config = select_folders()
 

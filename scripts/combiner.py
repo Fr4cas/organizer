@@ -80,10 +80,129 @@ def build_inventory(parse_results):
 
 
 # --------------------------------------------------
-# 1. Export individual organized workbook
+# 1. Organized-style worksheet (shared by Organized, 公司收文, 工地收文)
 # --------------------------------------------------
 
-def export_organized(file_path, data, anomalies, inventory):
+def write_organized_sheet(writer, data, sheet_name, table_name):
+
+    data.to_excel(
+        writer,
+        sheet_name=sheet_name,
+        index=False
+    )
+
+    ws = writer.sheets[sheet_name]
+
+    # ----------------------------------
+    # Column headers
+    # ----------------------------------
+
+    style_header_row(ws)
+
+    # ----------------------------------
+    # Excel table
+    # ----------------------------------
+
+    last_row = ws.max_row
+
+    table = Table(
+        displayName=table_name,
+        ref=f"A1:E{last_row}"
+    )
+
+    table.tableStyleInfo = TableStyleInfo(
+        name="TableStyleMedium2",
+        showFirstColumn=False,
+        showLastColumn=False,
+        showRowStripes=True,
+        showColumnStripes=False
+    )
+
+    # Set columns ourselves so openpyxl doesn't add an AutoFilter (row 1 dropdowns)
+    table.tableColumns = [
+        TableColumn(id=index, name=str(cell.value))
+        for index, cell in enumerate(ws[1], start=1)
+    ]
+
+    ws.add_table(table)
+
+    # ----------------------------------
+    # Column widths
+    # ----------------------------------
+
+    ws.column_dimensions["A"].width = 20
+    ws.column_dimensions["B"].width = 25
+    ws.column_dimensions["C"].width = 65
+    ws.column_dimensions["D"].width = 20
+    ws.column_dimensions["E"].width = 14
+
+    # ----------------------------------
+    # Data formatting
+    # ----------------------------------
+
+    thin_grey = Side(
+        style="hair",
+        color="D9E2F3"
+    )
+
+    for row in ws.iter_rows(
+        min_row=2,
+        max_row=last_row
+    ):
+
+        for cell in row:
+
+            cell.font = Font(
+                name="Microsoft JhengHei",
+                size=10,
+                color="333333"
+            )
+
+            cell.alignment = Alignment(
+                vertical="center",
+                horizontal="left",
+                wrap_text=True
+            )
+
+            cell.border = Border(
+                bottom=thin_grey
+            )
+
+        row[0].number_format = "@"
+        row[1].number_format = "@"
+
+        row[0].alignment = Alignment(
+            horizontal="center",
+            vertical="center"
+        )
+
+        row[3].alignment = Alignment(
+            horizontal="center",
+            vertical="center"
+        )
+
+        row[4].alignment = Alignment(
+            horizontal="center",
+            vertical="center"
+        )
+
+    # ----------------------------------
+    # Worksheet settings
+    # ----------------------------------
+
+    ws.freeze_panes = "A2"
+    ws.sheet_view.showGridLines = False
+
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 0
+    ws.page_setup.orientation = "landscape"
+
+
+# --------------------------------------------------
+# 2. Export individual organized workbook
+# --------------------------------------------------
+
+def export_organized(file_path, data, anomalies, inventory, company_records, site_records):
 
     if data is None or data.empty:
         print("No records to export.")
@@ -100,117 +219,11 @@ def export_organized(file_path, data, anomalies, inventory):
         engine="openpyxl"
     ) as writer:
 
-        data.to_excel(
-            writer,
-            sheet_name="Organized",
-            index=False
-        )
-
-        ws = writer.sheets["Organized"]
-
         # ----------------------------------
-        # Column headers
+        # Organized sheet
         # ----------------------------------
 
-        style_header_row(ws)
-
-        # ----------------------------------
-        # Excel table
-        # ----------------------------------
-
-        last_row = ws.max_row
-
-        table = Table(
-            displayName="OrganizedTable",
-            ref=f"A1:E{last_row}"
-        )
-
-        table.tableStyleInfo = TableStyleInfo(
-            name="TableStyleMedium2",
-            showFirstColumn=False,
-            showLastColumn=False,
-            showRowStripes=True,
-            showColumnStripes=False
-        )
-
-        # Set columns ourselves so openpyxl doesn't add an AutoFilter (row 1 dropdowns)
-        table.tableColumns = [
-            TableColumn(id=index, name=str(cell.value))
-            for index, cell in enumerate(ws[1], start=1)
-        ]
-
-        ws.add_table(table)
-
-        # ----------------------------------
-        # Column widths
-        # ----------------------------------
-
-        ws.column_dimensions["A"].width = 20
-        ws.column_dimensions["B"].width = 25
-        ws.column_dimensions["C"].width = 65
-        ws.column_dimensions["D"].width = 20
-        ws.column_dimensions["E"].width = 14
-
-        # ----------------------------------
-        # Data formatting
-        # ----------------------------------
-
-        thin_grey = Side(
-            style="hair",
-            color="D9E2F3"
-        )
-
-        for row in ws.iter_rows(
-            min_row=2,
-            max_row=last_row
-        ):
-
-            for cell in row:
-
-                cell.font = Font(
-                    name="Microsoft JhengHei",
-                    size=10,
-                    color="333333"
-                )
-
-                cell.alignment = Alignment(
-                    vertical="center",
-                    horizontal="left",
-                    wrap_text=True
-                )
-
-                cell.border = Border(
-                    bottom=thin_grey
-                )
-
-            row[0].number_format = "@"
-            row[1].number_format = "@"
-
-            row[0].alignment = Alignment(
-                horizontal="center",
-                vertical="center"
-            )
-
-            row[3].alignment = Alignment(
-                horizontal="center",
-                vertical="center"
-            )
-
-            row[4].alignment = Alignment(
-                horizontal="center",
-                vertical="center"
-            )
-
-        # ----------------------------------
-        # Worksheet settings
-        # ----------------------------------
-
-        ws.freeze_panes = "A2"
-        ws.sheet_view.showGridLines = False
-
-        ws.page_setup.fitToWidth = 1
-        ws.page_setup.fitToHeight = 0
-        ws.page_setup.orientation = "landscape"
+        write_organized_sheet(writer, data, "Organized", "OrganizedTable")
 
         # ----------------------------------
         # Anomalies sheet
@@ -265,16 +278,25 @@ def export_organized(file_path, data, anomalies, inventory):
             inventory_ws.freeze_panes = "A2"
             inventory_ws.auto_filter.ref = f"A1:D{inventory_ws.max_row}"
 
+        # ----------------------------------
+        # Classification sheets
+        # ----------------------------------
+
+        write_organized_sheet(writer, company_records, "公司收文", "CompanyTable")
+        write_organized_sheet(writer, site_records, "工地收文", "SiteTable")
+
     print(f"Exported: {output_file.name}")
     print(f"Records: {len(data)}")
     print(f"Anomalies: {len(anomalies)}")
+    print(f"公司收文: {len(company_records)}")
+    print(f"工地收文: {len(site_records)}")
 
     if inventory is not None:
         print(f"Inventory: {len(inventory)} file(s)")
 
 
 # --------------------------------------------------
-# 2. Export all extracted results
+# 3. Export all extracted results
 # --------------------------------------------------
 
 def process_results(results, parse_results=None):
@@ -292,7 +314,14 @@ def process_results(results, parse_results=None):
         print(f"\nExporting: {file_path.name}")
 
         try:
-            export_organized(file_path, result["data"], result["anomalies"], inventory)
+            export_organized(
+                file_path,
+                result["data"],
+                result["anomalies"],
+                inventory,
+                result["company_records"],
+                result["site_records"]
+            )
 
             successful += 1
 

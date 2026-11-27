@@ -18,6 +18,9 @@ ID_COLUMN = "收文單號"
 # YYMMDD-NN or YYMMDD-NNN (ASCII digits only)
 ID_PATTERN = re.compile(r"[0-9]{6}-[0-9]{2,3}")
 
+# Site receipt: NNNN + letter - YYMMDD - 1 to 3 digits (ASCII digits only)
+SITE_ID_PATTERN = re.compile(r"[0-9]{4}[A-Za-z]-[0-9]{6}-[0-9]{1,3}")
+
 ANOMALY_COLUMNS = [
     "原列",
     "整理列",
@@ -37,7 +40,7 @@ def check_id(value):
     if not value:
         return "單號缺漏"
 
-    if not ID_PATTERN.fullmatch(value):
+    if not ID_PATTERN.fullmatch(value) and not SITE_ID_PATTERN.fullmatch(value):
         return "格式錯誤"
 
     return None
