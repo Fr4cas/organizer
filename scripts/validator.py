@@ -28,6 +28,11 @@ ANOMALY_COLUMNS = [
     "異常原因"
 ]
 
+DUPLICATE_REASON = "單號重複"
+
+# Full-width semicolon joins several anomaly reasons in one cell
+REASON_SEPARATOR = "；"
+
 
 # --------------------------------------------------
 # 1. Check one record ID
@@ -54,20 +59,34 @@ def find_anomalies(data):
 
     anomalies = []
 
+    # Duplicates are counted within this workbook; blank IDs are never duplicates
+    ids = data[ID_COLUMN].astype(str).str.strip()
+    id_counts = ids[ids != ""].value_counts()
+
     for organized_row, (_, record) in enumerate(
         data.iterrows(),
         start=FIRST_DATA_ROW
     ):
 
-        reason = check_id(record[ID_COLUMN])
+        value = str(record[ID_COLUMN]).strip()
 
-        if reason:
+        reasons = []
+
+        format_reason = check_id(value)
+
+        if format_reason:
+            reasons.append(format_reason)
+
+        if value and id_counts.get(value, 0) > 1:
+            reasons.append(DUPLICATE_REASON)
+
+        if reasons:
 
             anomalies.append({
                 "原列": record[SOURCE_ROW_COLUMN],
                 "整理列": organized_row,
                 "收文單號": record[ID_COLUMN],
-                "異常原因": reason
+                "異常原因": REASON_SEPARATOR.join(reasons)
             })
 
     return pd.DataFrame(anomalies, columns=ANOMALY_COLUMNS)
